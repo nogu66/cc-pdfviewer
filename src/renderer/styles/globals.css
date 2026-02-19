@@ -1,0 +1,315 @@
+@import "tailwindcss";
+
+/* ===== カスタムプロパティ ===== */
+:root {
+  --color-bg: #0f0f0f;
+  --color-bg-2: #1a1a1a;
+  --color-bg-3: #242424;
+  --color-border: #2e2e2e;
+  --color-text: #e5e5e5;
+  --color-text-muted: #888888;
+  --color-accent: #f97316;
+  --color-accent-hover: #ea6c0a;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --titlebar-height: 40px;
+  --thumbnail-width: 180px;
+  --chat-height: 40%;
+}
+
+/* ===== リセット ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== アプリコンテナ ===== */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== タイトルバー ===== */
+.titlebar {
+  height: var(--titlebar-height);
+  background-color: var(--color-bg-2);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  flex-shrink: 0;
+  position: relative;
+  -webkit-app-region: drag;
+}
+
+.titlebar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 80px;
+}
+
+.titlebar-open-btn {
+  -webkit-app-region: no-drag;
+  padding: 4px 12px;
+  background-color: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  position: relative;
+  z-index: 1;
+}
+
+.titlebar-open-btn:hover {
+  background-color: var(--color-accent-hover);
+}
+
+/* ===== メインレイアウト ===== */
+.main-layout {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ===== ウェルカム画面 ===== */
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg);
+  transition: background-color 0.2s;
+}
+
+.welcome-screen.drag-over {
+  background-color: rgba(249, 115, 22, 0.05);
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -16px;
+}
+
+.welcome-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-icon {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.welcome-open-btn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background-color: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.welcome-open-btn:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+/* ===== 3ペインレイアウト ===== */
+.three-pane-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.thumbnail-panel-container {
+  width: var(--thumbnail-width);
+  flex-shrink: 0;
+  background-color: var(--color-bg-2);
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.center-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pdf-viewer-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--color-bg);
+}
+
+.chat-panel-container {
+  height: var(--chat-height);
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== ローディング・エラー ===== */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--color-error);
+  padding: 20px;
+  text-align: center;
+}
+
+/* ===== スクロールバー ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #444;
+}
+
+/* ===== チャットメッセージのマークダウンスタイル ===== */
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+  font-weight: 600;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.message-content h1 { font-size: 18px; }
+.message-content h2 { font-size: 16px; }
+.message-content h3 { font-size: 14px; }
+
+.message-content p {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.message-content code {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+}
+
+.message-content pre {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.message-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.message-content ul, .message-content ol {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.message-content li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.message-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 12px;
+  color: var(--color-text-muted);
+  margin: 8px 0;
+}
+
+.message-content strong { font-weight: 600; }
+.message-content em { font-style: italic; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
