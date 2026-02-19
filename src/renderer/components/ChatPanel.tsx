@@ -1,39 +1,15 @@
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { useChat } from '../hooks/useChat'
+import MarkdownContent from './MarkdownContent'
 
 interface ChatPanelProps {
   filePath: string
   isReady: boolean
+  onGoToPage?: (page: number) => void
+  onClose?: () => void
 }
 
-// シンプルなマークダウンレンダラー
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_m, _lang, code) =>
-      `<pre><code>${escapeHtml(code.trim())}</code></pre>`)
-    .replace(/`([^`]+)`/g, (_m, code) => `<code>${escapeHtml(code)}</code>`)
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/^[*\-] (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^([^<].*)$/gm, '<p>$1</p>')
-}
-
-export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.ReactElement {
+export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: ChatPanelProps): React.ReactElement {
   const {
     messages,
     inputValue,
@@ -41,11 +17,12 @@ export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.
     setInputValue,
     sendMessage,
     abortStream,
-    clearMessages
+    newSession
   } = useChat(filePath)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   // 新しいメッセージが来たら最下部にスクロール
   useEffect(() => {
@@ -73,13 +50,20 @@ export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      // IME変換中（CJK等）のEnterは送信しない
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault()
         handleSubmit()
       }
     },
     [handleSubmit]
   )
+
+  const handleCopy = useCallback(async (id: string, content: string) => {
+    await navigator.clipboard.writeText(content)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(prev => (prev === id ? null : prev)), 2000)
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -102,7 +86,7 @@ export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.
             </span>
           )}
           <button
-            onClick={clearMessages}
+            onClick={newSession}
             disabled={isStreaming}
             style={{
               padding: '3px 10px',
@@ -115,8 +99,26 @@ export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.
               opacity: isStreaming ? 0.5 : 1
             }}
           >
-            クリア
+            新規セッション
           </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              title="チャットを閉じる"
+              style={{
+                padding: '3px 8px',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                borderRadius: '5px',
+                color: 'var(--color-text-muted)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                lineHeight: 1
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
@@ -161,28 +163,51 @@ export default function ChatPanel({ filePath, isReady }: ChatPanelProps): React.
               {msg.role === 'user' ? 'あなた' : 'Claude'}
             </div>
 
-            <div
-              className={msg.role === 'assistant' ? 'message-content' : undefined}
-              style={{
-                maxWidth: '85%',
-                padding: '8px 12px',
-                borderRadius: msg.role === 'user'
-                  ? '12px 12px 2px 12px'
-                  : '12px 12px 12px 2px',
-                background: msg.role === 'user'
-                  ? 'var(--color-accent)'
-                  : 'var(--color-bg-3)',
-                color: 'var(--color-text)',
-                fontSize: '13px',
-                lineHeight: 1.6,
-                wordBreak: 'break-word',
-                whiteSpace: msg.role === 'user' ? 'pre-wrap' : undefined
-              }}
-              {...(msg.role === 'assistant'
-                ? { dangerouslySetInnerHTML: { __html: renderMarkdown(msg.content) } }
-                : { children: msg.content }
-              )}
-            />
+            {msg.role === 'assistant' ? (
+              <div
+                className="message-content"
+                style={{
+                  maxWidth: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '12px 12px 12px 2px',
+                  background: 'var(--color-bg-3)',
+                  color: 'var(--color-text)',
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                  wordBreak: 'break-word'
+                }}
+              >
+                <MarkdownContent content={msg.content} onGoToPage={onGoToPage} />
+              </div>
+            ) : (
+              <div
+                style={{
+                  maxWidth: '85%',
+                  padding: '8px 12px',
+                  borderRadius: '12px 12px 2px 12px',
+                  background: 'var(--color-accent)',
+                  color: 'var(--color-text)',
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {msg.content}
+              </div>
+            )}
+
+            {/* アシスタントメッセージのアクション */}
+            {msg.role === 'assistant' && !msg.isStreaming && msg.content && (
+              <div className="message-actions">
+                <button
+                  className="copy-btn"
+                  onClick={() => handleCopy(msg.id, msg.content)}
+                >
+                  {copiedId === msg.id ? 'コピーしました' : 'コピー'}
+                </button>
+              </div>
+            )}
 
             {/* エラー表示 */}
             {msg.error && (

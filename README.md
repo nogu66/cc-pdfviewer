@@ -1,80 +1,122 @@
-# Claude Cowork for PDF
+# CC PDF Viewer
 
-大規模言語モデル Claude を活用した PDF 対話デスクトップアプリケーション。
+[日本語](README.ja.md)
 
-## 機能
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/nogu66/cc-pdf-viewer)](https://github.com/nogu66/cc-pdf-viewer/releases)
+[![Build](https://github.com/nogu66/cc-pdf-viewer/actions/workflows/build.yml/badge.svg)](https://github.com/nogu66/cc-pdf-viewer/actions/workflows/build.yml)
 
-- PDFファイルのドラッグ＆ドロップ / ファイルダイアログで開く
-- PDF.jsによるインタラクティブなビューア（ページ送り、ズーム、サムネイル）
-- RAGパイプライン（テキスト抽出 → スマートチャンキング → BM25検索）
-- Claude APIによるストリーミング応答
-- セキュアなElectron設計（contextIsolation、APIキーはメインプロセスのみ）
+A desktop PDF viewer with Claude AI chat — open a PDF, ask questions, get answers powered by RAG.
 
-## セットアップ
+## Features
 
-### 必要環境
-- Node.js 18+
-- Bun 1.0+
+- Open PDFs via drag & drop or file dialog
+- Interactive viewer (page navigation, zoom, thumbnail panel) powered by PDF.js
+- RAG pipeline: text extraction → smart chunking → BM25 search
+- Streaming responses from Claude API
+- Secure Electron architecture (contextIsolation, API key in main process only)
 
-### インストール
-```bash
-bun install
-```
+## Download
 
-### 開発モードで起動
-```bash
-bun run dev
-```
+Download the latest release from [GitHub Releases](https://github.com/nogu66/cc-pdf-viewer/releases).
 
-### APIキーの設定
+| Platform | File |
+|---|---|
+| macOS | `CC-PDF-Viewer-x.x.x.dmg` |
+| Windows | `CC-PDF-Viewer-Setup-x.x.x.exe` |
+| Linux | `CC-PDF-Viewer-x.x.x.AppImage` |
 
-アプリ起動後、DevToolsのコンソール（Cmd+Opt+I）で以下を実行:
+> **Note:** The app is not code-signed. On macOS you may see a Gatekeeper warning.
+> To bypass: open `System Settings > Privacy & Security` and click "Open Anyway".
+
+## Getting Started
+
+### Prerequisites
+
+- An [Anthropic API key](https://console.anthropic.com/)
+
+### Set your API key
+
+After launching the app, open the Settings dialog (gear icon in the top-right) and enter your API key.
+
+Alternatively, open DevTools (`Cmd+Opt+I` on macOS) and run:
 
 ```javascript
 window.electronAPI.store.set('anthropicApiKey', 'sk-ant-your-key-here')
 ```
 
-設定後はアプリを再起動してください。
+Restart the app after saving.
 
-## ビルド
+## Development
+
+### Requirements
+
+- Node.js 18+
+- [Bun](https://bun.sh/) 1.0+
+
+### Setup
 
 ```bash
-# プロダクションビルド
-bun run build
-
-# パッケージング（.dmg / .exe / .AppImage）
-bun run dist
+git clone https://github.com/nogu66/cc-pdf-viewer.git
+cd cc-pdf-viewer
+bun install
+bun run dev
 ```
 
-## 技術スタック
+### Scripts
 
-| レイヤー | 技術 |
+| Command | Description |
+|---|---|
+| `bun run dev` | Start in development mode |
+| `bun run build` | Production build |
+| `bun run typecheck` | TypeScript type check |
+| `bun run dist` | Package app (dmg / exe / AppImage) |
+| `bun run preview` | Preview production build |
+
+## Building from Source
+
+```bash
+bun install
+bun run build
+bun run dist
+# Output: release/
+```
+
+## Tech Stack
+
+| Layer | Technology |
 |---|---|
 | Desktop | Electron 33 |
 | Frontend | React 18 + TypeScript |
 | UI | Tailwind CSS v4 |
 | Build | electron-vite (esbuild + Vite) |
-| PDF表示 | pdfjs-dist 4 |
-| PDF抽出 | pdf-parse |
-| 検索 | BM25（日本語2-gram対応） |
+| PDF Rendering | pdfjs-dist 4 |
+| PDF Extraction | pdf-parse |
+| Search | BM25 (with Japanese 2-gram support) |
 | AI | @anthropic-ai/sdk (claude-opus-4-5) |
-| 設定 | electron-store |
+| Storage | electron-store |
 
-## プロジェクト構造
+## Project Structure
 
 ```
 src/
-├── main/           # Electronメインプロセス
-│   ├── index.ts    # エントリーポイント
-│   ├── ipc/        # IPC通信ハンドラ
-│   ├── pdf/        # PDF処理（抽出・チャンキング・BM25検索）
-│   └── claude/     # Claude API統合
-├── renderer/       # Reactフロントエンド
+├── main/           # Electron main process
+│   ├── index.ts    # Entry point
+│   ├── ipc/        # IPC handlers
+│   ├── pdf/        # PDF processing (extraction, chunking, BM25)
+│   └── claude/     # Claude API integration
+├── renderer/       # React frontend
 │   ├── App.tsx
 │   ├── components/ # PDFViewer, ThumbnailPanel, ChatPanel
 │   ├── hooks/      # usePDF, useChat
 │   └── styles/
-└── preload/        # contextBridge定義
+└── preload/        # contextBridge definitions
 ```
-# pdf-viewer-agent
-# pdf-viewer-agent
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

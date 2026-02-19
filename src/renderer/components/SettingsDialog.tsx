@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react'
+import type { Theme } from '../hooks/useTheme'
 
 interface SettingsDialogProps {
   isOpen: boolean
   onClose: () => void
+  theme: Theme
+  setTheme: (t: Theme) => void
 }
 
-export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps): React.ReactElement | null {
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: 'system', label: 'システム' },
+  { value: 'light',  label: 'ライト' },
+  { value: 'dark',   label: 'ダーク' }
+]
+
+export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: SettingsDialogProps): React.ReactElement | null {
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [savedMessage, setSavedMessage] = useState('')
 
-  // ダイアログが開くたびに現在のAPIキーを取得
   useEffect(() => {
     if (!isOpen) return
     window.electronAPI.store.get('anthropicApiKey').then(key => {
@@ -20,7 +28,6 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
     setSavedMessage('')
   }, [isOpen])
 
-  // Escキーで閉じる
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,20 +47,18 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
   if (!isOpen) return null
 
   return (
-    // オーバーレイ
     <div
       onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.7)',
+        background: 'rgba(0,0,0,0.6)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000
       }}
     >
-      {/* ダイアログ本体 */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -63,14 +68,12 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
           padding: '24px',
           width: '440px',
           maxWidth: '90vw',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+          boxShadow: '0 20px 60px var(--color-shadow-dropdown)'
         }}
       >
         {/* ヘッダー */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>
-            設定
-          </h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>設定</h2>
           <button
             onClick={onClose}
             style={{
@@ -87,6 +90,42 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
             ×
           </button>
         </div>
+
+        {/* テーマ選択 */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+            表示テーマ
+          </label>
+          <div style={{ display: 'flex', gap: '0', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+            {THEME_OPTIONS.map((opt, i) => {
+              const isActive = theme === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => setTheme(opt.value)}
+                  style={{
+                    flex: 1,
+                    padding: '7px 0',
+                    background: isActive ? 'var(--color-accent)' : 'var(--color-bg-3)',
+                    border: 'none',
+                    borderLeft: i > 0 ? '1px solid var(--color-border)' : 'none',
+                    color: isActive ? 'white' : 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: isActive ? 600 : 400,
+                    fontFamily: 'inherit',
+                    transition: 'background-color 0.15s, color 0.15s'
+                  }}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* セパレーター */}
+        <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: '20px' }} />
 
         {/* APIキー入力 */}
         <div style={{ marginBottom: '16px' }}>
@@ -135,14 +174,12 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
           </p>
         </div>
 
-        {/* 保存メッセージ */}
         {savedMessage && (
           <p style={{ fontSize: '12px', color: 'var(--color-success)', marginBottom: '12px' }}>
             ✓ {savedMessage}
           </p>
         )}
 
-        {/* ボタン */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <button
             onClick={onClose}

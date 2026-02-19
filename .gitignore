@@ -29,6 +29,7 @@ yarn-error.log*
 
 # electron-builder
 electron-builder.env
+*.blockmap
 
 # TypeScriptキャッシュ
 *.tsbuildinfo
