@@ -11,9 +11,13 @@ interface MarkdownContentProps {
   onGoToPage?: (page: number) => void
 }
 
-// (p.X) または (p. X) パターンをマークダウンリンクに変換
+// (p.X) / (p. X) / （p.X）/ （p. X） パターンをマークダウンリンクに変換
 function preprocessPageRefs(text: string): string {
-  return text.replace(/\(p\.\s*(\d+)\)/g, '[p.$1](page://$1)')
+  // 半角括弧: (p.X) または (p. X)
+  let result = text.replace(/\(p\.\s*(\d+)\)/g, '[$1](page://$1)')
+  // 全角括弧: （p.X） または （p. X）
+  result = result.replace(/（p\.\s*(\d+)）/g, '[$1](page://$1)')
+  return result
 }
 
 export default function MarkdownContent({ content, onGoToPage }: MarkdownContentProps): React.ReactElement {
@@ -56,9 +60,9 @@ export default function MarkdownContent({ content, onGoToPage }: MarkdownContent
           <button
             className="citation-btn"
             onClick={() => onGoToPage?.(pageNum)}
-            title={`${pageNum}ページに移動`}
+            title={`p.${pageNum} に移動`}
           >
-            {children}
+            {pageNum}
           </button>
         )
       }
