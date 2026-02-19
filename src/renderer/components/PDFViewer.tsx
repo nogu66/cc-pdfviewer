@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as PDFJS from 'pdfjs-dist'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
+import { useLanguage } from '../contexts/LanguageContext'
 
 // PDF.jsのワーカーを設定
 PDFJS.GlobalWorkerOptions.workerSrc = new URL(
@@ -33,6 +34,7 @@ export default function PDFViewer({
   pageCount,
   onPageChange
 }: PDFViewerProps): React.ReactElement {
+  const { t } = useLanguage()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
@@ -41,12 +43,10 @@ export default function PDFViewer({
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
   const [pageInput, setPageInput] = useState(String(currentPage))
 
-  // ページ入力をcurrentPageに同期
   useEffect(() => {
     setPageInput(String(currentPage))
   }, [currentPage])
 
-  // PDFを読み込む
   useEffect(() => {
     let cancelled = false
     setPdfDoc(null)
@@ -60,7 +60,7 @@ export default function PDFViewer({
           setPdfDoc(doc)
         }
       } catch (err) {
-        console.error('PDF読み込みエラー:', err)
+        console.error('PDF load error:', err)
       }
     }
 
@@ -70,7 +70,6 @@ export default function PDFViewer({
     }
   }, [filePath])
 
-  // ページをレンダリング
   const renderPage = useCallback(
     async (doc: PDFDocumentProxy, pageNum: number, currentScale: number): Promise<void> => {
       if (!canvasRef.current) return
@@ -103,7 +102,7 @@ export default function PDFViewer({
         await renderTask.promise
       } catch (err: unknown) {
         if (err instanceof Error && !err.message.includes('cancelled')) {
-          console.error('ページレンダリングエラー:', err)
+          console.error('Page render error:', err)
         }
       } finally {
         setIsRendering(false)
@@ -118,7 +117,6 @@ export default function PDFViewer({
     }
   }, [pdfDoc, currentPage, scale, renderPage])
 
-  // コンテナ幅に合わせてスケールを自動調整
   useEffect(() => {
     if (!pdfDoc || !containerRef.current) return
 
@@ -158,7 +156,7 @@ export default function PDFViewer({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* ツールバー */}
+      {/* Toolbar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -168,13 +166,13 @@ export default function PDFViewer({
         background: 'var(--color-bg-2)',
         flexShrink: 0
       }}>
-        {/* ページナビゲーション */}
+        {/* Page navigation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
             style={{ ...toolbarBtnStyle, opacity: currentPage <= 1 ? 0.4 : 1 }}
-            title="前のページ"
+            title={t('pdf.prevPage')}
           >
             ←
           </button>
@@ -204,33 +202,33 @@ export default function PDFViewer({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= pageCount}
             style={{ ...toolbarBtnStyle, opacity: currentPage >= pageCount ? 0.4 : 1 }}
-            title="次のページ"
+            title={t('pdf.nextPage')}
           >
             →
           </button>
         </div>
 
-        {/* ズームコントロール */}
+        {/* Zoom controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={handleZoomOut} style={toolbarBtnStyle} title="縮小">−</button>
+          <button onClick={handleZoomOut} style={toolbarBtnStyle} title={t('pdf.zoomOut')}>−</button>
           <button
             onClick={handleZoomReset}
             style={{ ...toolbarBtnStyle, minWidth: '56px', fontSize: '12px' }}
-            title="リセット"
+            title={t('pdf.zoomReset')}
           >
             {Math.round(scale * 100)}%
           </button>
-          <button onClick={handleZoomIn} style={toolbarBtnStyle} title="拡大">＋</button>
+          <button onClick={handleZoomIn} style={toolbarBtnStyle} title={t('pdf.zoomIn')}>＋</button>
         </div>
 
         <div style={{ width: '60px', display: 'flex', justifyContent: 'flex-end' }}>
           {isRendering && (
-            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>描画中...</span>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{t('pdf.rendering')}</span>
           )}
         </div>
       </div>
 
-      {/* PDFキャンバス */}
+      {/* PDF canvas */}
       <div
         ref={containerRef}
         style={{

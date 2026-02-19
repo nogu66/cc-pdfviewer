@@ -8,6 +8,8 @@
 
 大規模言語モデル Claude を活用した PDF 対話デスクトップアプリケーション。
 
+![CC PDF Viewer スクリーンショット](docs/screenshot.png)
+
 ## 機能
 
 - PDF ファイルのドラッグ＆ドロップ / ファイルダイアログで開く

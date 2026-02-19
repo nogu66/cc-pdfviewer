@@ -8,6 +8,8 @@
 
 A desktop PDF viewer with Claude AI chat — open a PDF, ask questions, get answers powered by RAG.
 
+![CC PDF Viewer screenshot](docs/screenshot.png)
+
 ## Features
 
 - Open PDFs via drag & drop or file dialog

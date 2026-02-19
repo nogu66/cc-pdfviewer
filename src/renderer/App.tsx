@@ -6,19 +6,21 @@ import SettingsDialog from './components/SettingsDialog'
 import { usePDF } from './hooks/usePDF'
 import { useRecentFiles } from './hooks/useRecentFiles'
 import { useTheme } from './hooks/useTheme'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
+import { createT, type Locale } from './i18n'
 
 const getFileName = (filePath: string): string => filePath.split('/').pop() ?? filePath
 
-function formatRelativeDate(ts: number): string {
+function formatRelativeDate(ts: number, t: ReturnType<typeof createT>, locale: Locale): string {
   const diff = Date.now() - ts
   const minutes = Math.floor(diff / 60_000)
-  if (minutes < 1) return 'たった今'
-  if (minutes < 60) return `${minutes}分前`
+  if (minutes < 1) return t('date.justNow')
+  if (minutes < 60) return t('date.minutesAgo', { n: minutes })
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}時間前`
+  if (hours < 24) return t('date.hoursAgo', { n: hours })
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}日前`
-  return new Date(ts).toLocaleDateString('ja-JP')
+  if (days < 7) return t('date.daysAgo', { n: days })
+  return new Date(ts).toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US')
 }
 
 const PdfIcon = ({ size = 16, style }: { size?: number; style?: React.CSSProperties }) => (
@@ -28,7 +30,7 @@ const PdfIcon = ({ size = 16, style }: { size?: number; style?: React.CSSPropert
   </svg>
 )
 
-export default function App(): React.ReactElement {
+function AppContent(): React.ReactElement {
   const {
     filePath,
     pageCount,
@@ -43,6 +45,7 @@ export default function App(): React.ReactElement {
 
   const { recentFiles, addRecentFile, removeRecentFile } = useRecentFiles()
   const { theme, setTheme } = useTheme()
+  const { t, locale } = useLanguage()
 
   const [isDragOver, setIsDragOver] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -51,7 +54,6 @@ export default function App(): React.ReactElement {
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // ドロップダウン外クリックで閉じる
   useEffect(() => {
     if (!isRecentOpen) return
     const handler = (e: MouseEvent) => {
@@ -63,7 +65,6 @@ export default function App(): React.ReactElement {
     return () => document.removeEventListener('mousedown', handler)
   }, [isRecentOpen])
 
-  // ファイルの読み込み成功を検知して履歴に追加
   const prevLoadedPathRef = useRef<string | null>(null)
   useEffect(() => {
     if (filePath && title && !isLoading && !error && filePath !== prevLoadedPathRef.current) {
@@ -112,26 +113,26 @@ export default function App(): React.ReactElement {
       onDragLeave={handleDragLeave}
       onDrop={handleDropEvent}
     >
-      {/* タイトルバー */}
+      {/* Title bar */}
       <header className="titlebar">
         <span className="titlebar-title">
           {title ? `${title} — CC PDF Viewer` : 'CC PDF Viewer'}
         </span>
         <div style={{ display: 'flex', gap: '8px', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          {/* 開く + 履歴ドロップダウン (スプリットボタン) */}
+          {/* Open + Recent dropdown (split button) */}
           <div ref={dropdownRef} style={{ position: 'relative', display: 'flex' }}>
             <button
               className="titlebar-open-btn"
               onClick={openFile}
               style={{ borderRadius: recentFiles.length > 0 ? '6px 0 0 6px' : '6px', borderRight: recentFiles.length > 0 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}
             >
-              開く
+              {t('app.open')}
             </button>
             {recentFiles.length > 0 && (
               <button
                 className="titlebar-open-btn"
                 onClick={() => setIsRecentOpen(v => !v)}
-                title="最近のファイル"
+                title={t('app.recentFiles')}
                 style={{ borderRadius: '0 6px 6px 0', padding: '4px 7px', fontSize: '10px' }}
               >
                 ▾
@@ -139,7 +140,7 @@ export default function App(): React.ReactElement {
             )}
             {isRecentOpen && (
               <div className="recent-dropdown">
-                <div className="recent-dropdown-header">最近のファイル</div>
+                <div className="recent-dropdown-header">{t('app.recentFiles')}</div>
                 {recentFiles.slice(0, 8).map(file => (
                   <button
                     key={file.filePath}
@@ -152,7 +153,7 @@ export default function App(): React.ReactElement {
                       {file.title || getFileName(file.filePath)}
                     </span>
                     <span className="recent-dropdown-date">
-                      {formatRelativeDate(file.openedAt)}
+                      {formatRelativeDate(file.openedAt, t, locale)}
                     </span>
                   </button>
                 ))}
@@ -170,7 +171,7 @@ export default function App(): React.ReactElement {
                 color: isChatOpen ? 'white' : 'var(--color-text-muted)'
               }}
             >
-              チャット
+              {t('app.chat')}
             </button>
           )}
           <button
@@ -178,7 +179,7 @@ export default function App(): React.ReactElement {
             onClick={() => setIsSettingsOpen(true)}
             style={{ background: 'var(--color-bg-3)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
           >
-            設定
+            {t('app.settings')}
           </button>
         </div>
       </header>
@@ -190,14 +191,12 @@ export default function App(): React.ReactElement {
         setTheme={setTheme}
       />
 
-      {/* メインコンテンツ */}
+      {/* Main content */}
       <main className="main-layout">
         {!filePath ? (
-          // ウェルカム画面
           <div className={`welcome-screen${isDragOver ? ' drag-over' : ''}`}>
             <div className={`welcome-content${recentFiles.length > 0 ? ' welcome-content--wide' : ''}`}>
 
-              {/* ヘッダー: アイコン + タイトル */}
               <div className="welcome-header">
                 <div className="welcome-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -211,22 +210,19 @@ export default function App(): React.ReactElement {
                 <h1 className="welcome-title">CC PDF Viewer</h1>
               </div>
 
-              {/* ボディ: 開始 + 最近のファイル */}
               <div className="welcome-body">
-                {/* 開始セクション */}
                 <div className="welcome-section">
-                  <h2 className="welcome-section-title">開始</h2>
+                  <h2 className="welcome-section-title">{t('app.start')}</h2>
                   <button className="welcome-action-btn" onClick={openFile}>
                     <PdfIcon size={15} style={{ flexShrink: 0 }} />
-                    <span>PDFファイルを開く</span>
+                    <span>{t('app.openPdf')}</span>
                   </button>
-                  <p className="welcome-hint">またはウィンドウにD&D</p>
+                  <p className="welcome-hint">{t('app.dragAndDrop')}</p>
                 </div>
 
-                {/* 最近のファイルセクション */}
                 {recentFiles.length > 0 && (
                   <div className="welcome-section welcome-section--recent">
-                    <h2 className="welcome-section-title">最近のファイル</h2>
+                    <h2 className="welcome-section-title">{t('app.recentFiles')}</h2>
                     <div className="welcome-recent-list">
                       {recentFiles.map(file => (
                         <div key={file.filePath} className="welcome-recent-item">
@@ -243,13 +239,13 @@ export default function App(): React.ReactElement {
                               <span className="welcome-recent-path">{file.filePath}</span>
                             </div>
                             <span className="welcome-recent-date">
-                              {formatRelativeDate(file.openedAt)}
+                              {formatRelativeDate(file.openedAt, t, locale)}
                             </span>
                           </button>
                           <button
                             className="welcome-recent-remove"
                             onClick={() => removeRecentFile(file.filePath)}
-                            title="履歴から削除"
+                            title={t('app.removeFromHistory')}
                           >
                             ×
                           </button>
@@ -263,7 +259,6 @@ export default function App(): React.ReactElement {
             </div>
           </div>
         ) : (
-          // 3ペインレイアウト
           <div className="three-pane-layout">
             <div className="thumbnail-panel-container">
               <ThumbnailPanel
@@ -279,11 +274,11 @@ export default function App(): React.ReactElement {
                 {isLoading ? (
                   <div className="loading-indicator">
                     <div className="spinner" />
-                    <span>PDFを処理中...</span>
+                    <span>{t('app.processingPdf')}</span>
                   </div>
                 ) : error ? (
                   <div className="error-message">
-                    <span>エラー: {error}</span>
+                    <span>{t('app.error')}: {error}</span>
                     <button
                       onClick={openFile}
                       style={{
@@ -296,7 +291,7 @@ export default function App(): React.ReactElement {
                         cursor: 'pointer'
                       }}
                     >
-                      別のファイルを開く
+                      {t('app.openAnotherFile')}
                     </button>
                   </div>
                 ) : (
@@ -322,5 +317,13 @@ export default function App(): React.ReactElement {
         )}
       </main>
     </div>
+  )
+}
+
+export default function App(): React.ReactElement {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }

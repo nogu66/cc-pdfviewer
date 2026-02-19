@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import type { Theme } from '../hooks/useTheme'
+import { useLanguage } from '../contexts/LanguageContext'
+import type { Locale } from '../i18n'
 
 interface SettingsDialogProps {
   isOpen: boolean
@@ -8,17 +10,23 @@ interface SettingsDialogProps {
   setTheme: (t: Theme) => void
 }
 
-const THEME_OPTIONS: { value: Theme; label: string }[] = [
-  { value: 'system', label: 'システム' },
-  { value: 'light',  label: 'ライト' },
-  { value: 'dark',   label: 'ダーク' }
-]
-
 export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: SettingsDialogProps): React.ReactElement | null {
+  const { t, locale, setLocale } = useLanguage()
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [savedMessage, setSavedMessage] = useState('')
+
+  const THEME_OPTIONS: { value: Theme; label: string }[] = [
+    { value: 'system', label: t('settings.themeSystem') },
+    { value: 'light',  label: t('settings.themeLight') },
+    { value: 'dark',   label: t('settings.themeDark') }
+  ]
+
+  const LANG_OPTIONS: { value: Locale; label: string }[] = [
+    { value: 'en', label: t('settings.langEnglish') },
+    { value: 'ja', label: t('settings.langJapanese') },
+  ]
 
   useEffect(() => {
     if (!isOpen) return
@@ -41,7 +49,7 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
     setIsSaving(true)
     await window.electronAPI.store.set('anthropicApiKey', apiKey.trim())
     setIsSaving(false)
-    setSavedMessage('保存しました。次回のチャットから反映されます。')
+    setSavedMessage(t('settings.saved'))
   }
 
   if (!isOpen) return null
@@ -71,9 +79,9 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
           boxShadow: '0 20px 60px var(--color-shadow-dropdown)'
         }}
       >
-        {/* ヘッダー */}
+        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>設定</h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text)' }}>{t('settings.title')}</h2>
           <button
             onClick={onClose}
             style={{
@@ -91,10 +99,10 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
           </button>
         </div>
 
-        {/* テーマ選択 */}
+        {/* Theme selector */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
-            表示テーマ
+            {t('settings.theme')}
           </label>
           <div style={{ display: 'flex', gap: '0', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
             {THEME_OPTIONS.map((opt, i) => {
@@ -124,13 +132,46 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
           </div>
         </div>
 
-        {/* セパレーター */}
+        {/* Language selector */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+            {t('settings.language')}
+          </label>
+          <div style={{ display: 'flex', gap: '0', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+            {LANG_OPTIONS.map((opt, i) => {
+              const isActive = locale === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => setLocale(opt.value)}
+                  style={{
+                    flex: 1,
+                    padding: '7px 0',
+                    background: isActive ? 'var(--color-accent)' : 'var(--color-bg-3)',
+                    border: 'none',
+                    borderLeft: i > 0 ? '1px solid var(--color-border)' : 'none',
+                    color: isActive ? 'white' : 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: isActive ? 600 : 400,
+                    fontFamily: 'inherit',
+                    transition: 'background-color 0.15s, color 0.15s'
+                  }}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Separator */}
         <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: '20px' }} />
 
-        {/* APIキー入力 */}
+        {/* API key input */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
-            Anthropic APIキー
+            {t('settings.apiKey')}
           </label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
@@ -155,7 +196,7 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
             />
             <button
               onClick={() => setShowKey(v => !v)}
-              title={showKey ? '隠す' : '表示'}
+              title={showKey ? t('settings.hide') : t('settings.show')}
               style={{
                 padding: '8px 10px',
                 background: 'var(--color-bg-3)',
@@ -170,7 +211,7 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
             </button>
           </div>
           <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
-            APIキーはローカルにのみ保存され、外部には送信されません。
+            {t('settings.apiKeyHint')}
           </p>
         </div>
 
@@ -193,7 +234,7 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
               fontSize: '13px'
             }}
           >
-            キャンセル
+            {t('settings.cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -209,7 +250,7 @@ export default function SettingsDialog({ isOpen, onClose, theme, setTheme }: Set
               fontWeight: 500
             }}
           >
-            {isSaving ? '保存中...' : '保存'}
+            {isSaving ? t('settings.saving') : t('settings.save')}
           </button>
         </div>
       </div>

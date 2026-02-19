@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as PDFJS from 'pdfjs-dist'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface ThumbnailPanelProps {
   filePath: string
@@ -23,11 +24,11 @@ export default function ThumbnailPanel({
   currentPage,
   onPageSelect
 }: ThumbnailPanelProps): React.ReactElement {
+  const { t } = useLanguage()
   const [thumbnails, setThumbnails] = useState<ThumbnailItem[]>([])
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const activePageRef = useRef<HTMLDivElement>(null)
 
-  // PDFを読み込む
   useEffect(() => {
     let cancelled = false
 
@@ -51,7 +52,6 @@ export default function ThumbnailPanel({
     return () => { cancelled = true }
   }, [filePath])
 
-  // サムネイルを非同期で生成
   const generateThumbnail = useCallback(
     async (doc: PDFDocumentProxy, pageNum: number): Promise<string> => {
       const page = await doc.getPage(pageNum)
@@ -71,7 +71,6 @@ export default function ThumbnailPanel({
     []
   )
 
-  // 全サムネイルを順次生成
   useEffect(() => {
     if (!pdfDoc) return
 
@@ -84,13 +83,13 @@ export default function ThumbnailPanel({
           const dataUrl = await generateThumbnail(pdfDoc, i)
           if (!cancelled) {
             setThumbnails(prev =>
-              prev.map(t => t.pageNum === i ? { ...t, dataUrl, isLoading: false } : t)
+              prev.map(th => th.pageNum === i ? { ...th, dataUrl, isLoading: false } : th)
             )
           }
         } catch {
           if (!cancelled) {
             setThumbnails(prev =>
-              prev.map(t => t.pageNum === i ? { ...t, isLoading: false } : t)
+              prev.map(th => th.pageNum === i ? { ...th, isLoading: false } : th)
             )
           }
         }
@@ -101,14 +100,13 @@ export default function ThumbnailPanel({
     return () => { cancelled = true }
   }, [pdfDoc, generateThumbnail])
 
-  // 現在のページにスクロール
   useEffect(() => {
     activePageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [currentPage])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* ヘッダー */}
+      {/* Header */}
       <div style={{
         padding: '8px 12px',
         fontSize: '11px',
@@ -117,10 +115,10 @@ export default function ThumbnailPanel({
         flexShrink: 0,
         userSelect: 'none'
       }}>
-        ページ ({pageCount})
+        {t('thumbnail.pages', { n: pageCount })}
       </div>
 
-      {/* サムネイルリスト */}
+      {/* Thumbnail list */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -151,7 +149,6 @@ export default function ThumbnailPanel({
               transition: 'all 0.15s'
             }}
           >
-            {/* サムネイル画像またはプレースホルダー */}
             <div style={{
               width: THUMBNAIL_WIDTH,
               aspectRatio: '0.707',
@@ -168,16 +165,15 @@ export default function ThumbnailPanel({
               ) : thumbnail.dataUrl ? (
                 <img
                   src={thumbnail.dataUrl}
-                  alt={`ページ ${thumbnail.pageNum}`}
+                  alt={`${thumbnail.pageNum}`}
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   draggable={false}
                 />
               ) : (
-                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>エラー</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{t('thumbnail.error')}</span>
               )}
             </div>
 
-            {/* ページ番号 */}
             <span style={{
               fontSize: '11px',
               color: thumbnail.pageNum === currentPage

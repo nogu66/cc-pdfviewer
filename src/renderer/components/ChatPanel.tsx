@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { useChat } from '../hooks/useChat'
 import MarkdownContent from './MarkdownContent'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface ChatPanelProps {
   filePath: string
@@ -20,16 +21,15 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
     newSession
   } = useChat(filePath)
 
+  const { t } = useLanguage()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  // 新しいメッセージが来たら最下部にスクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // テキストエリアの高さを自動調整
   useEffect(() => {
     const textarea = textareaRef.current
     if (!textarea) return
@@ -50,7 +50,6 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-      // IME変換中（CJK等）のEnterは送信しない
       if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault()
         handleSubmit()
@@ -67,7 +66,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* ヘッダー */}
+      {/* Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -77,12 +76,12 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
         flexShrink: 0
       }}>
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)' }}>
-          Claude と対話
+          {t('chat.title')}
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {!isReady && (
             <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-              PDFを処理中...
+              {t('chat.processing')}
             </span>
           )}
           <button
@@ -99,12 +98,12 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
               opacity: isStreaming ? 0.5 : 1
             }}
           >
-            新規セッション
+            {t('chat.newSession')}
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              title="チャットを閉じる"
+              title={t('chat.close')}
               style={{
                 padding: '3px 8px',
                 background: 'transparent',
@@ -122,7 +121,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
         </div>
       </div>
 
-      {/* メッセージリスト */}
+      {/* Message list */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -138,9 +137,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
             fontSize: '13px',
             paddingTop: '20px'
           }}>
-            {isReady
-              ? 'PDFについて何でも質問してください'
-              : 'PDFの処理が完了するとチャットが有効になります'}
+            {isReady ? t('chat.emptyReady') : t('chat.emptyNotReady')}
           </div>
         )}
 
@@ -160,7 +157,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
               paddingLeft: msg.role === 'assistant' ? '4px' : '0',
               paddingRight: msg.role === 'user' ? '4px' : '0'
             }}>
-              {msg.role === 'user' ? 'あなた' : 'Claude'}
+              {msg.role === 'user' ? t('chat.you') : 'Claude'}
             </div>
 
             {msg.role === 'assistant' ? (
@@ -197,19 +194,19 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
               </div>
             )}
 
-            {/* アシスタントメッセージのアクション */}
+            {/* Assistant message actions */}
             {msg.role === 'assistant' && !msg.isStreaming && msg.content && (
               <div className="message-actions">
                 <button
                   className="copy-btn"
                   onClick={() => handleCopy(msg.id, msg.content)}
                 >
-                  {copiedId === msg.id ? 'コピーしました' : 'コピー'}
+                  {copiedId === msg.id ? t('chat.copied') : t('chat.copy')}
                 </button>
               </div>
             )}
 
-            {/* エラー表示 */}
+            {/* Error display */}
             {msg.error && (
               <div style={{
                 fontSize: '11px',
@@ -219,11 +216,11 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
                 borderRadius: '4px',
                 maxWidth: '85%'
               }}>
-                エラー: {msg.error}
+                {t('chat.error')}: {msg.error}
               </div>
             )}
 
-            {/* ストリーミングカーソル */}
+            {/* Streaming cursor */}
             {msg.isStreaming && (
               <div style={{
                 width: '8px',
@@ -240,7 +237,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 入力エリア */}
+      {/* Input area */}
       <div style={{
         padding: '10px 12px',
         borderTop: '1px solid var(--color-border)',
@@ -256,11 +253,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={
-              isReady
-                ? 'PDFについて質問する... (Shift+Enter で改行)'
-                : 'PDFを処理中...'
-            }
+            placeholder={isReady ? t('chat.placeholder') : t('chat.placeholderProcessing')}
             disabled={!isReady || isStreaming}
             rows={1}
             style={{
@@ -296,7 +289,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
                 flexShrink: 0
               }}
             >
-              停止
+              {t('chat.stop')}
             </button>
           ) : (
             <button
@@ -317,7 +310,7 @@ export default function ChatPanel({ filePath, isReady, onGoToPage, onClose }: Ch
                 flexShrink: 0
               }}
             >
-              送信
+              {t('chat.send')}
             </button>
           )}
         </form>
