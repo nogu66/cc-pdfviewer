@@ -1,13 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { query } from '@anthropic-ai/claude-agent-sdk'
 import { TextChunk } from '../pdf/chunker'
 
 export class ClaudeAgent {
-  private client: Anthropic
+  private apiKey: string
   private readonly model = 'claude-opus-4-5'
-  private readonly maxTokens = 4096
 
   constructor(apiKey: string) {
-    this.client = new Anthropic({ apiKey })
+    this.apiKey = apiKey
   }
 
   async streamResponse(
@@ -31,30 +30,35 @@ ${context}
 - ページ番号の参照がある場合は「(p.X)」形式で引用元を示してください
 - マークダウン形式で構造化した回答を心がけてください`
 
-    const stream = this.client.messages.stream({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: userMessage
-        }
-      ]
-    })
-
+    const abortController = new AbortController()
     signal?.addEventListener('abort', () => {
-      stream.abort()
+      abortController.abort()
     })
 
-    for await (const event of stream) {
+    const conversation = query({
+      prompt: userMessage,
+      options: {
+        systemPrompt,
+        model: this.model,
+        maxTurns: 1,
+        allowedTools: [],
+        includePartialMessages: true,
+        abortController,
+        permissionMode: 'bypassPermissions',
+        allowDangerouslySkipPermissions: true,
+        env: { ...process.env, ANTHROPIC_API_KEY: this.apiKey }
+      }
+    })
+
+    for await (const message of conversation) {
       if (signal?.aborted) break
 
       if (
-        event.type === 'content_block_delta' &&
-        event.delta.type === 'text_delta'
+        message.type === 'stream_event' &&
+        message.event.type === 'content_block_delta' &&
+        message.event.delta.type === 'text_delta'
       ) {
-        onChunk(event.delta.text)
+        onChunk(message.event.delta.text)
       }
     }
   }
