@@ -77,3 +77,4 @@ src/
 └── preload/        # contextBridge定義
 ```
 # pdf-viewer-agent
+# pdf-viewer-agent
