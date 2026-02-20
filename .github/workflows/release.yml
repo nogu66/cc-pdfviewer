@@ -43,6 +43,10 @@ jobs:
 
       - name: Package
         run: bun run dist
+        env:
+          # CI 環境では Developer ID 署名・公証なしでビルドする
+          # (ユーザーは DMG 同梱の install.command で Gatekeeper をバイパスできる)
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
