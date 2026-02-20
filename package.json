@@ -5,13 +5,13 @@
   "main": "out/main/index.mjs",
   "author": "nogu66",
   "license": "MIT",
-  "homepage": "https://github.com/nogu66/cc-pdf-viewer",
+  "homepage": "https://github.com/nogu66/cc-pdfviewer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nogu66/cc-pdf-viewer.git"
+    "url": "https://github.com/nogu66/cc-pdfviewer.git"
   },
   "bugs": {
-    "url": "https://github.com/nogu66/cc-pdf-viewer/issues"
+    "url": "https://github.com/nogu66/cc-pdfviewer/issues"
   },
   "keywords": [
     "pdf",
