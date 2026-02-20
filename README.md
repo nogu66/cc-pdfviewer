@@ -41,6 +41,8 @@ Download the latest release from [GitHub Releases](https://github.com/nogu66/cc-
 
 After launching the app, open the Settings dialog (gear icon in the top-right) and enter your API key.
 
+![Settings dialog](docs/screenshot-settings.png)
+
 Alternatively, open DevTools (`Cmd+Opt+I` on macOS) and run:
 
 ```javascript

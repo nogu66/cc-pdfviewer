@@ -11,7 +11,11 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/main/index.ts')
         },
-        external: ['pdf-parse', 'electron-store']
+        external: ['pdf-parse', 'electron-store'],
+        output: {
+          format: 'es',
+          entryFileNames: '[name].mjs'
+        }
       }
     },
     resolve: {

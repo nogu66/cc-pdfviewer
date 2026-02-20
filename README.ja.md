@@ -51,6 +51,8 @@ bun install
 
 アプリ起動後、設定ダイアログ（右上の歯車アイコン）から API キーを入力できます。
 
+![設定ダイアログ](docs/screenshot-settings.png)
+
 または DevTools コンソール（`Cmd+Opt+I`）で以下を実行:
 
 ```javascript
