@@ -69,6 +69,13 @@
       "target": "dmg",
       "category": "public.app-category.productivity"
     },
+    "dmg": {
+      "contents": [
+        {"x": 130, "y": 220},
+        {"x": 410, "y": 220, "type": "link", "path": "/Applications"},
+        {"x": 270, "y": 380, "type": "file", "path": "resources/install.command"}
+      ]
+    },
     "win": {
       "target": "nsis"
     },
