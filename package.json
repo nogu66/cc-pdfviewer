@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.47",
+    "@anthropic-ai/sdk": "^0.39.0",
     "electron-store": "^8.1.0",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^4.9.155",
