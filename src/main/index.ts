@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { registerIPCHandlers } from './ipc/handlers'
 
@@ -54,12 +54,24 @@ app.on('window-all-closed', () => {
   }
 })
 
-// セキュリティ: 外部URLへのナビゲーションを防止
+// セキュリティ: 外部URLへのナビゲーションを防止 & 新規ウインドウを抑止
 app.on('web-contents-created', (_event, contents) => {
   contents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl)
     if (parsedUrl.origin !== 'http://localhost:5173' && !navigationUrl.startsWith('file://')) {
       event.preventDefault()
+      // http/https は OS デフォルトブラウザで開く
+      if (navigationUrl.startsWith('http://') || navigationUrl.startsWith('https://')) {
+        shell.openExternal(navigationUrl)
+      }
     }
+  })
+
+  // window.open() や target="_blank" による新規ウインドウを完全に防止
+  contents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
   })
 })

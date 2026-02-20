@@ -11,12 +11,19 @@ interface MarkdownContentProps {
   onGoToPage?: (page: number) => void
 }
 
-// (p.X) / (p. X) / （p.X）/ （p. X） パターンをマークダウンリンクに変換
+// [[p.X]] / (p.X) / （p.X） / (pg X) / 裸のp.X パターンをマークダウンリンクに変換
+// 処理順序: 特殊→汎用（二重変換を防止）
 function preprocessPageRefs(text: string): string {
-  // 半角括弧: (p.X) または (p. X)
-  let result = text.replace(/\(p\.\s*(\d+)\)/g, '[$1](page://$1)')
-  // 全角括弧: （p.X） または （p. X）
+  // 1. [[p.X]] 形式（最も特殊・推奨形式）
+  let result = text.replace(/\[\[p\.(\d+)\]\]/g, '[$1](page://$1)')
+  // 2. 半角括弧: (p.X) または (p. X)
+  result = result.replace(/\(p\.\s*(\d+)\)/g, '[$1](page://$1)')
+  // 3. 全角括弧: （p.X） または （p. X）
   result = result.replace(/（p\.\s*(\d+)）/g, '[$1](page://$1)')
+  // 4. pg形式括弧: (pg X), (pg. X), (pg4)
+  result = result.replace(/\(pg\.?\s*(\d+)\)/g, '[$1](page://$1)')
+  // 5. 裸のp.X（URL・マークダウンリンク・既変換済みリンク内の誤マッチを防止）
+  result = result.replace(/(?<![a-zA-Z\[\/])p\.(\d+)/g, '[$1](page://$1)')
   return result
 }
 
@@ -60,14 +67,23 @@ export default function MarkdownContent({ content, onGoToPage }: MarkdownContent
           <button
             className="citation-btn"
             onClick={() => onGoToPage?.(pageNum)}
-            title={`p.${pageNum} に移動`}
+            title={`ページ ${pageNum} に移動`}
           >
             {pageNum}
           </button>
         )
       }
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer">
+        <a
+          href={href}
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault()
+            if (href) {
+              window.open(href)
+            }
+          }}
+        >
           {children}
         </a>
       )
@@ -84,7 +100,18 @@ export default function MarkdownContent({ content, onGoToPage }: MarkdownContent
   }
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={components}
+      urlTransform={(url) => {
+        // page:// は内部ページナビゲーション用プロトコルとして通過させる
+        if (url.startsWith('page://')) return url
+        // http/https は外部リンクとして通過させる
+        if (url.startsWith('http://') || url.startsWith('https://')) return url
+        // それ以外（javascript: 等）はブロック
+        return ''
+      }}
+    >
       {processed}
     </ReactMarkdown>
   )
