@@ -1,3 +1,7 @@
+// シェル環境を最初に読み込む（nvm/Homebrew等の PATH を GUI アプリに引き継ぐため）
+import { loadShellEnv } from './shell-env'
+loadShellEnv()
+
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { registerIPCHandlers } from './ipc/handlers'
